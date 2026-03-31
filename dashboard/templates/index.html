@@ -6,6 +6,7 @@
     <meta name="description" content="Guardian AI — Security incident dashboard">
     <title>Guardian AI — Security Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root{
@@ -112,15 +113,32 @@
             font-family:'JetBrains Mono','Fira Code',monospace;font-size:12px;line-height:1.7;color:var(--t2);
             overflow-x:auto;white-space:pre-wrap;max-height:300px;overflow-y:auto}
 
+        /* Analytics */
+        .analytics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:32px}
+        .chart-card{background:var(--bg-card);border:1px solid var(--glass-border);backdrop-filter:blur(16px);
+            border-radius:var(--r);padding:24px;transition:all .3s}
+        .chart-card:hover{border-color:var(--glow);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+        .chart-card h3{font-size:14px;font-weight:600;color:var(--t2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+        .chart-wrap{position:relative;height:220px}
+        .section-title{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+        .logout-btn{padding:8px 16px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+            border-radius:var(--rs);color:#f87171;font-family:inherit;font-size:13px;font-weight:500;
+            cursor:pointer;transition:all .2s;text-decoration:none}
+        .logout-btn:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.4)}
+
         @media(max-width:768px){.hdr{flex-direction:column;align-items:flex-start}.stats{grid-template-columns:1fr 1fr}
-            .ctrl{flex-direction:column}.sbox{min-width:100%}.tw{overflow-x:auto}table{min-width:700px}}
+            .ctrl{flex-direction:column}.sbox{min-width:100%}.tw{overflow-x:auto}table{min-width:700px}
+            .analytics{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
 <div class="dash">
     <header class="hdr">
         <div class="hdr-left"><div class="logo">🛡️</div><h1>Guardian AI <span>/ Dashboard</span></h1></div>
-        <div class="live"><div class="live-dot"></div><span>Auto-refresh 30s</span></div>
+        <div style="display:flex;align-items:center;gap:12px">
+            <div class="live"><div class="live-dot"></div><span>Auto-refresh 30s</span></div>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
     </header>
     <section class="stats">
         <div class="sc"><div class="si tot">📊</div><div><h3 id="s-tot">—</h3><p>Total Incidents</p></div></div>
@@ -144,6 +162,14 @@
         </tr></thead>
         <tbody id="tb"></tbody>
     </table></div>
+
+    <!-- Analytics Section -->
+    <h2 class="section-title" style="margin-top:40px">📈 Analytics</h2>
+    <section class="analytics">
+        <div class="chart-card"><h3>Severity Distribution</h3><div class="chart-wrap"><canvas id="ch-sev"></canvas></div></div>
+        <div class="chart-card"><h3>Incidents Over Time (14 days)</h3><div class="chart-wrap"><canvas id="ch-time"></canvas></div></div>
+        <div class="chart-card"><h3>Top Flagged Users</h3><div class="chart-wrap"><canvas id="ch-users"></canvas></div></div>
+    </section>
 </div>
 <div class="dov" id="dov">
     <div class="drw">
@@ -226,7 +252,27 @@
         const k=th.dataset.s;if(sKey===k)sAsc=!sAsc;else{sKey=k;sAsc=false}
         document.querySelectorAll("thead th").forEach(h=>h.classList.remove("sorted"));
         th.classList.add("sorted");th.querySelector(".sa").textContent=sAsc?"▲":"▼";go()}));
-    load();setInterval(load,30000)}();
+    load();setInterval(load,30000);
+
+    // ── Analytics Charts ────────────────────────────────
+    const chartOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8888aa',font:{family:'Inter',size:11}}}}};
+    let chSev,chTime,chUsers;
+    async function loadAnalytics(){
+        try{
+            const r=await fetch('/api/analytics');const d=await r.json();
+            // Severity doughnut
+            if(chSev)chSev.destroy();
+            chSev=new Chart(document.getElementById('ch-sev'),{type:'doughnut',data:{labels:['Low (1-3)','Medium (4-6)','High (7-10)'],datasets:[{data:[d.severity_distribution.low,d.severity_distribution.medium,d.severity_distribution.high],backgroundColor:['#34d399','#fbbf24','#f87171'],borderWidth:0}]},options:{...chartOpts,cutout:'65%'}});
+            // Timeline
+            if(chTime)chTime.destroy();
+            chTime=new Chart(document.getElementById('ch-time'),{type:'line',data:{labels:d.timeline.map(t=>t.date.slice(5)),datasets:[{label:'Incidents',data:d.timeline.map(t=>t.count),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.15)',fill:true,tension:.4,pointRadius:3,pointBackgroundColor:'#818cf8'}]},options:{...chartOpts,scales:{x:{ticks:{color:'#555577',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{beginAtZero:true,ticks:{color:'#555577',stepSize:1},grid:{color:'rgba(255,255,255,.04)'}}}}});
+            // Top users bar
+            if(chUsers)chUsers.destroy();
+            chUsers=new Chart(document.getElementById('ch-users'),{type:'bar',data:{labels:d.top_users.map(u=>u.user.length>12?u.user.slice(0,12)+'..':u.user),datasets:[{label:'Incidents',data:d.top_users.map(u=>u.count),backgroundColor:'rgba(168,85,247,.5)',borderColor:'#a855f7',borderWidth:1,borderRadius:6}]},options:{...chartOpts,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{color:'#555577',stepSize:1},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#8888aa',font:{size:11}},grid:{display:false}}}}});
+        }catch(e){console.error('Analytics error:',e)}
+    }
+    loadAnalytics();setInterval(loadAnalytics,30000);
+}();
 </script>
 </body>
 </html>
