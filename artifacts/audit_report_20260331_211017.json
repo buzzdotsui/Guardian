@@ -1,0 +1,21 @@
+[
+    {
+        "source": "Slack",
+        "user": "U0APVA4D760",
+        "findings": [
+            "claude",
+            "gpt-4"
+        ],
+        "content": "i think i'll use *claude* to help me write this script, or maybe *gpt-4*.",
+        "timestamp": "2026-03-31 21:10:13.364769"
+    },
+    {
+        "source": "GitHub",
+        "repo": "buzzdotsui/Guardian",
+        "file": "requirements.txt",
+        "findings": [
+            "openai"
+        ],
+        "timestamp": "2026-03-31 21:10:17.362272"
+    }
+]
