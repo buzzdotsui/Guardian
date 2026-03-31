@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 
 from app.integrations.github_client import GitHubClient
 from app.notifications.email_alerter import send_security_alert
+from app.scanners.secret_scanner import scan_for_secrets
 
 # ---------------------------------------------------------------------------
 # Bootstrap
@@ -297,6 +298,48 @@ def post_security_warning(
         log.error("❌ Failed to post Slack warning: %s", e)
         return None
 
+def send_remediation_dm(channel: str, user_id: str, ai_reasoning: str, severity: int):
+    """
+    Sends a private DM to the offending user with remediation steps.
+    """
+    emoji = _severity_emoji(severity)
+    
+    dm_blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "🛡️ Guardian AI — Action Required",
+                "emoji": True,
+            },
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": (
+                    f"Hi <@{user_id}>, I detected a potential security risk in your recent message in <#{channel}>.\n\n"
+                    f"*AI Reasoning:* _{ai_reasoning}_\n"
+                    f"*Severity:* {emoji} *{severity}/10*\n\n"
+                    "*What you need to do:*\n"
+                    "1. If this was a real credential or customer data leak, rotate the key or delete the uploaded data immediately.\n"
+                    "2. If this was a mistake or false positive, react to my message in the channel with ✅ to dismiss it.\n"
+                    f"3. Review our <{INTERNAL_AI_POLICY_URL}|Internal AI Policy> for more guidance."
+                ),
+            },
+        },
+    ]
+
+    try:
+        app.client.chat_postMessage(
+            channel=user_id,
+            blocks=dm_blocks,
+            text=f"🛡️ Action Required: Security risk detected (Severity {severity}/10)",
+        )
+        log.info("📩 Remediation DM sent to user %s.", user_id)
+    except Exception as e:
+        log.error("❌ Failed to send DM to user %s: %s", user_id, e)
+
 # ---------------------------------------------------------------------------
 # Audit logging  (updated with severity field)
 # ---------------------------------------------------------------------------
@@ -308,6 +351,7 @@ def save_audit_report(
     ai_reasoning: str,
     github_result: dict,
     severity: int,
+    detected_by: str = "ai",
 ) -> dict:
     """
     Writes a JSON incident report to /artifacts/<timestamp>_incident.json.
@@ -323,6 +367,7 @@ def save_audit_report(
         "slack_message":    message_text,
         "ai_reasoning":     ai_reasoning,
         "severity":         severity,
+        "detected_by":      detected_by,
         "github_confirmed": github_result["confirmed"],
         "github_evidence":  github_result["evidence"],
         "github_url":       github_result.get("github_url"),
@@ -372,16 +417,28 @@ def handle_message_events(body, logger):
 
     log.info("👂 [%s] Analysing message from %s: '%s…'", channel, user_id, text[:60])
 
-    # ── 2. Groq AI risk analysis ─────────────────────────────────────────
-    ai_decision = analyze_security_risk(text)
+    # ── 2. Pattern-Based Secret Scanner (Fast Path) ──────────────────────
+    secret_matches = scan_for_secrets(text)
+    detected_by = "regex" if secret_matches else "ai"
 
-    if ai_decision == "ERROR":
-        log.warning("⚠️  Skipping enforcement — Groq returned an error.")
-        return
-
-    if "RISK" not in ai_decision.upper():
-        log.info("✅ SAFE — no action required.")
-        return
+    if secret_matches:
+        # Highest severity matched
+        base_severity = max(m.severity for m in secret_matches)
+        discovered_secrets = ", ".join(m.pattern_name for m in secret_matches)
+        ai_decision = f"RISK: Regex detected secrets: {discovered_secrets}."
+        log.warning("🚨 [FAST PATH] Regex secret match for %s: %s", user_id, discovered_secrets)
+        # We skip Groq if regex hits
+    else:
+        # ── 2.5 Groq AI risk analysis ─────────────────────────────────────────
+        ai_decision = analyze_security_risk(text)
+    
+        if ai_decision == "ERROR":
+            log.warning("⚠️  Skipping enforcement — Groq returned an error.")
+            return
+    
+        if "RISK" not in ai_decision.upper():
+            log.info("✅ SAFE — no action required.")
+            return
 
     # ── 3. RISK detected — run GitHub cross-correlation ──────────────────
     log.warning("🚨 RISK DETECTED for user %s | Reason: %s", user_id, ai_decision)
@@ -400,7 +457,13 @@ def handle_message_events(body, logger):
         )
 
     # ── 4. Compute severity score ────────────────────────────────────────
-    severity = compute_severity_score(ai_decision, github_result["confirmed"])
+    if detected_by == "regex":
+        severity = base_severity
+        if github_result["confirmed"]:
+            severity = min(severity + 3, 10)
+    else:
+        severity = compute_severity_score(ai_decision, github_result["confirmed"])
+    
     log.info("📊 Severity score: %s %d/10", _severity_emoji(severity), severity)
 
     # ── 5. Post in-thread Security Warning ──────────────────────────────
@@ -420,6 +483,15 @@ def handle_message_events(body, logger):
         ai_reasoning  = ai_decision,
         github_result = github_result,
         severity      = severity,
+        detected_by   = detected_by,
+    )
+
+    # ── 6.5 Send DM Remediation Steps ────────────────────────────────────
+    send_remediation_dm(
+        channel=channel,
+        user_id=user_id,
+        ai_reasoning=ai_decision,
+        severity=severity,
     )
 
     # ── 7. Track warning for feedback loop ──────────────────────────────
@@ -671,6 +743,137 @@ def _update_artifact_feedback(report: dict, feedback: str):
                 return
         except Exception:
             continue
+
+
+# ---------------------------------------------------------------------------
+# Component E  —  Slack App Home Tab
+# ---------------------------------------------------------------------------
+
+@app.event("app_home_opened")
+def update_app_home(client, event, logger):
+    """
+    Renders Guardian AI's App Home tab with stats and quick links.
+    """
+    user_id = event["user"]
+
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "🛡️ Guardian AI Home",
+                "emoji": True
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Welcome! I am your automated data-security auditor. I monitor Slack and cross-correlate with GitHub to detect Shadow AI usage and leaked credentials."
+            }
+        },
+        {"type": "divider"},
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "*Quick Actions*"
+            }
+        },
+        {
+            "type": "actions",
+            "elements": [
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "📄 Read AI Policy",
+                        "emoji": True
+                    },
+                    "url": INTERNAL_AI_POLICY_URL,
+                    "action_id": "policy_btn"
+                },
+                {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🚨 Self-Report Incident",
+                        "emoji": True
+                    },
+                    "action_id": "home_report_btn"
+                }
+            ]
+        }
+    ]
+
+    try:
+        client.views_publish(
+            user_id=user_id,
+            view={
+                "type": "home",
+                "blocks": blocks
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error publishing home tab: %s", e)
+
+@app.action("home_report_btn")
+def handle_home_report_btn(ack, body, client):
+    """Trigger the `/report` modal from the App Home button."""
+    ack()
+    
+    # We can reuse the modal presentation from the slash command
+    trigger_id = body.get("trigger_id")
+    client.views_open(
+        trigger_id=trigger_id,
+        view={
+            "type": "modal",
+            "callback_id": "self_report_modal",
+            "title": {"type": "plain_text", "text": "🛡️ Self-Report"},
+            "submit": {"type": "plain_text", "text": "Submit Report"},
+            "close": {"type": "plain_text", "text": "Cancel"},
+            "blocks": [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "Use this form to proactively report a potential security violation you've observed or been involved in."
+                    }
+                },
+                {
+                    "type": "input",
+                    "block_id": "description_block",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "description",
+                        "multiline": True,
+                        "placeholder": {"type": "plain_text", "text": "Describe the incident..."}
+                    },
+                    "label": {"type": "plain_text", "text": "Incident Description"}
+                },
+                {
+                    "type": "input",
+                    "block_id": "severity_block",
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "severity",
+                        "placeholder": {"type": "plain_text", "text": "Select severity"},
+                        "options": [
+                            {"text": {"type": "plain_text", "text": "🟡 Low (1-3)"}, "value": "3"},
+                            {"text": {"type": "plain_text", "text": "🟠 Medium (4-6)"}, "value": "5"},
+                            {"text": {"type": "plain_text", "text": "🔴 High (7-10)"}, "value": "8"},
+                        ]
+                    },
+                    "label": {"type": "plain_text", "text": "Estimated Severity"}
+                }
+            ]
+        }
+    )
+
+@app.action("policy_btn")
+def handle_policy_btn(ack):
+    """Acknowledge the link button click"""
+    ack()
 
 
 # ---------------------------------------------------------------------------

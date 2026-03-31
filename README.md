@@ -10,15 +10,18 @@ Guardian AI is a real-time security enforcement engine that monitors Slack messa
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | **AI Risk Analysis** | Groq-powered (Llama 3.3-70b) message analysis with low false-positive prompt engineering |
-| 2 | **GitHub Cross-Correlation** | Scans user gists & recent commits for leaked content matching Slack messages |
-| 3 | **Severity Scoring** | 1–10 risk score computed from AI confidence keywords + GitHub confirmation |
-| 4 | **Channel Allowlist** | Restrict monitoring to specific Slack channels via `GUARDIAN_CHANNELS` |
-| 5 | **`/report` Command** | Users self-report incidents via a Slack modal |
-| 6 | **Feedback Loop** | React ✅ to dismiss or ⚠️ to escalate — feedback persisted in audit JSON |
-| 7 | **Email Escalation** | Severity ≥ 7 triggers an HTML email alert via SMTP |
-| 8 | **Weekly Digest** | APScheduler posts a Block Kit summary every Monday 08:00 UTC |
-| 9 | **Dashboard UI** | Flask-powered dark-mode web dashboard for browsing all incidents |
+| 1 | **Regex Secret Scanner** | Zero-latency pre-filter matching 19+ secret patterns (AWS, GitHub, Slack tokens, SSH keys, etc.) |
+| 2 | **AI Risk Analysis** | Groq-powered (Llama 3.3-70b) context analysis for generic leaks or Shadow AI usage |
+| 3 | **GitHub Cross-Correlation** | Scans user gists & recent commits for leaked content matching Slack messages |
+| 4 | **Severity Scoring** | 1–10 risk score computed from regex matches, AI confidence, and GitHub confirmation |
+| 5 | **Actionable DMs** | Sends a private Slack DM with remediation steps to the offending user |
+| 6 | **Channel Allowlist** | Restrict monitoring to specific Slack channels via `GUARDIAN_CHANNELS` |
+| 7 | **`/report` Command** | Users self-report incidents via a Slack modal |
+| 8 | **Feedback Loop** | React ✅ to dismiss or ⚠️ to escalate — feedback persisted in audit JSON |
+| 9 | **Slack App Home** | Quick links and stats view natively in the Slack App Home tab |
+| 10 | **Email Escalation** | Severity ≥ 7 triggers an HTML email alert via SMTP |
+| 11 | **Weekly Digest** | APScheduler posts a Block Kit summary every Monday 08:00 UTC |
+| 12 | **Auth Dashboard** | Protected dark-mode web dashboard featuring Chart.js incident analytics |
 
 ---
 
@@ -67,6 +70,10 @@ ALERT_SMTP_HOST=smtp.gmail.com
 ALERT_SMTP_PORT=587
 ALERT_SMTP_USER=
 ALERT_SMTP_PASS=
+
+# ─── Dashboard Auth ───────────────────────────────────
+DASHBOARD_USER=admin
+DASHBOARD_PASS=guardian
 ```
 
 ### Run the Engine
@@ -106,10 +113,11 @@ guardian-ai/
 │   │   └── shadow_ai_detector.py    # Shadow AI detection patterns
 │   └── data/                        # Static data / pattern files
 ├── dashboard/
-│   ├── app.py                       # Flask API + page server
+│   ├── app.py                       # Flask API, login, and analytics endpoints
 │   ├── run.py                       # Dashboard entry point
 │   └── templates/
-│       └── index.html               # Dark-mode glassmorphism UI
+│       ├── index.html               # Dark-mode dashboard with Chart.js
+│       └── login.html               # Authentication page
 ├── artifacts/                       # Incident JSON reports (auto-created)
 ├── requirements.txt
 ├── .env
