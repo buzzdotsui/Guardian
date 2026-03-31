@@ -27,5 +27,5 @@ COPY . .
 # Expose Dashboard port
 EXPOSE 5000
 
-# Default command (overridden in docker-compose)
-CMD ["python", "main.py"]
+# Default command uses Honcho to run both web and worker from Procfile
+CMD ["honcho", "start"]
