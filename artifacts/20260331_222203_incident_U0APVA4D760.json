@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-03-31T22:22:03.138430+00:00",
+  "user": "U0APVA4D760",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "I fucked the hr yesterday for sending our entire database to chatgpt",
+  "ai_reasoning": "RISK: Sharing proprietary company data with an unauthorized external service.",
+  "severity": 2,
+  "github_confirmed": false,
+  "github_evidence": [],
+  "github_url": null,
+  "policy_url": "https://your-company.example.com/internal-ai-policy"
+}

@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-03-31T20:18:18.399496+00:00",
+  "user": "U0APVA4D760",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "I pasted our entire client database into ChatGPT to help me clean the data",
+  "ai_reasoning": "RISK: User admits to uploading confidential customer data to an external AI service (ChatGPT).",
+  "severity": 9,
+  "github_confirmed": true,
+  "github_evidence": [
+    {
+      "url": "https://gist.github.com/example/abc123",
+      "description": "client_data_export.csv",
+      "matched_keyword": "client"
+    }
+  ],
+  "github_url": "https://gist.github.com/example/abc123",
+  "policy_url": "https://your-company.example.com/internal-ai-policy"
+}

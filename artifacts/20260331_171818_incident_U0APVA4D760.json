@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-03-31T17:18:18.400992+00:00",
+  "user": "U0APVA4D760",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "Here is the prod API key: sk-proj-abc123xyz456 — use it for the demo",
+  "ai_reasoning": "RISK: Sharing an API key (sk-proj-...) in plain text in a public channel.",
+  "severity": 7,
+  "github_confirmed": false,
+  "github_evidence": [],
+  "github_url": null,
+  "policy_url": "https://your-company.example.com/internal-ai-policy"
+}

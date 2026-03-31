@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-03-30T22:18:18.402231+00:00",
+  "user": "U099EXAMPLE",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "I uploaded the internal financial report Q1 to my personal Google Drive",
+  "ai_reasoning": "RISK: User describes exfiltrating confidential financial data to an external service.",
+  "severity": 6,
+  "github_confirmed": false,
+  "github_evidence": [],
+  "github_url": null,
+  "policy_url": "https://your-company.example.com/internal-ai-policy"
+}

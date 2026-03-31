@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-03-31T22:17:10.767014+00:00",
+  "user": "U0APVA4D760",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "\"I pasted our client database into ChatGPT to clean it up",
+  "ai_reasoning": "RISK: Using an unauthorised AI tool to process confidential company data.",
+  "severity": 5,
+  "github_confirmed": true,
+  "github_evidence": [
+    {
+      "repo": "buzzdotsui/buzzdotsui",
+      "commit_sha": "eeff822fc9",
+      "commit_message": "Clean up README by removing extraneous content\n\nRemoved unnecessary sections and elements from the README.",
+      "url": "https://github.com/buzzdotsui/buzzdotsui/commit/eeff822fc90603d7322192f71e88640e331e2e5e",
+      "matched_keyword": "clean"
+    }
+  ],
+  "github_url": "https://github.com/buzzdotsui/buzzdotsui/commit/eeff822fc90603d7322192f71e88640e331e2e5e",
+  "policy_url": "https://your-company.example.com/internal-ai-policy"
+}

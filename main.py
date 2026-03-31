@@ -2,6 +2,7 @@ import os
 import sys
 from dotenv import load_dotenv
 from app.engine import app 
+from app.scheduler import start_scheduler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 # 1. Load configuration from .env file
@@ -36,7 +37,11 @@ def bootstrap():
 if __name__ == "__main__":
     bootstrap()
     
-    # 2. Launch the Engine
+    # 2. Start the weekly‑digest scheduler
+    print("⏰ Starting scheduler...")
+    start_scheduler(app)
+    
+    # 3. Launch the Engine
     print("🚀 Initializing Socket Mode...")
     
     # We pull the actual value from the environment using the label

@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-03-28T22:18:18.404388+00:00",
+  "user": "U0APVA4D760",
+  "channel": "C0AQL1M5M1N",
+  "slack_message": "password for staging DB is Passw0rd!123 if anyone needs it",
+  "ai_reasoning": "RISK: Sharing a database password in plain text.",
+  "severity": 5,
+  "github_confirmed": false,
+  "github_evidence": [],
+  "github_url": null,
+  "policy_url": "https://your-company.example.com/internal-ai-policy",
+  "user_feedback": "dismissed"
+}

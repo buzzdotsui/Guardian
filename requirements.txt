@@ -2,5 +2,6 @@ slack-bolt
 requests
 python-dotenv
 PyGithub
-pyyaml
-openai
+groq
+flask
+apscheduler
