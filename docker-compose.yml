@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  # The Engine: Listens to Slack real-time events via Socket Mode
+  guardian-engine:
+    build: .
+    container_name: guardian_engine
+    command: python main.py
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      # Data volume to persist the SQLite database
+      - guardian-data:/app/data
+    environment:
+      # Override DB URL to use the shared volume
+      - DATABASE_URL=sqlite:////app/data/guardian.db
+
+  # The Dashboard: Flask Web Server running Gunicorn
+  guardian-web:
+    build: .
+    container_name: guardian_web
+    command: gunicorn -w 4 -b 0.0.0.0:5000 dashboard.app:app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      # Use the same data volume to access the SAME SQLite database
+      - guardian-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/guardian.db
+
+volumes:
+  # Persistent volume for SQLite storage
+  guardian-data:

@@ -29,6 +29,9 @@ from dotenv import load_dotenv
 from app.integrations.github_client import GitHubClient
 from app.notifications.email_alerter import send_security_alert
 from app.scanners.secret_scanner import scan_for_secrets
+from app.database import SessionLocal
+from app.models import Incident
+import dateutil.parser
 
 # ---------------------------------------------------------------------------
 # Bootstrap
@@ -354,33 +357,37 @@ def save_audit_report(
     detected_by: str = "ai",
 ) -> dict:
     """
-    Writes a JSON incident report to /artifacts/<timestamp>_incident.json.
+    Writes an incident report to the SQLAlchemy database.
     Returns the report dict.
     """
-    timestamp   = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    report_path = ARTIFACTS_DIR / f"{timestamp}_incident_{user_id}.json"
-
-    report = {
-        "timestamp":        datetime.now(timezone.utc).isoformat(),
-        "user":             user_id,
-        "channel":          channel,
-        "slack_message":    message_text,
-        "ai_reasoning":     ai_reasoning,
-        "severity":         severity,
-        "detected_by":      detected_by,
-        "github_confirmed": github_result["confirmed"],
-        "github_evidence":  github_result["evidence"],
-        "github_url":       github_result.get("github_url"),
-        "policy_url":       INTERNAL_AI_POLICY_URL,
-    }
+    db = SessionLocal()
+    incident = Incident(
+        user_id=user_id,
+        channel=channel,
+        slack_message=message_text,
+        ai_reasoning=ai_reasoning,
+        severity=severity,
+        detected_by=detected_by,
+        type="system",
+        github_confirmed=github_result["confirmed"],
+        github_evidence=github_result["evidence"],
+        github_url=github_result.get("github_url"),
+        policy_url=INTERNAL_AI_POLICY_URL,
+    )
 
     try:
-        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        log.info("📁 Audit report saved → %s", report_path)
+        db.add(incident)
+        db.commit()
+        db.refresh(incident)
+        log.info("📁 Audit report saved to DB → ID: %s", incident.id)
     except Exception as e:
-        log.error("❌ Failed to write audit report: %s", e)
+        db.rollback()
+        log.error("❌ Failed to write audit report to DB: %s", e)
+    finally:
+        report_dict = incident.to_dict()
+        db.close()
 
-    return report
+    return report_dict
 
 # ---------------------------------------------------------------------------
 # Main message event handler  —  full enforcement orchestration
@@ -576,29 +583,34 @@ def handle_self_report_submission(ack, body, client, view):
     description = values["description_block"]["description"]["value"]
     severity = int(values["severity_block"]["severity"]["selected_option"]["value"])
 
-    # Save a self_report audit JSON
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    report_path = ARTIFACTS_DIR / f"{timestamp}_incident_{user_id}.json"
-
-    report = {
-        "timestamp":     datetime.now(timezone.utc).isoformat(),
-        "type":          "self_report",
-        "user":          user_id,
-        "channel":       "self-report",
-        "slack_message": description,
-        "ai_reasoning":  "Self-reported by user via /report command.",
-        "severity":      severity,
-        "github_confirmed": False,
-        "github_evidence":  [],
-        "github_url":    None,
-        "policy_url":    INTERNAL_AI_POLICY_URL,
-    }
+    # Save a self_report to DB
+    db = SessionLocal()
+    incident = Incident(
+        user_id=user_id,
+        channel="self-report",
+        slack_message=description,
+        ai_reasoning="Self-reported by user via /report command.",
+        severity=severity,
+        detected_by="user",
+        type="self_report",
+        github_confirmed=False,
+        github_evidence=[],
+        github_url=None,
+        policy_url=INTERNAL_AI_POLICY_URL,
+    )
 
     try:
-        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        log.info("📁 Self-report saved → %s", report_path)
+        db.add(incident)
+        db.commit()
+        db.refresh(incident)
+        log.info("📁 Self-report saved to DB → ID: %s", incident.id)
+        report = incident.to_dict()
     except Exception as e:
-        log.error("❌ Failed to write self-report: %s", e)
+        db.rollback()
+        log.error("❌ Failed to write self-report to DB: %s", e)
+        report = {}
+    finally:
+        db.close()
 
     # Notify GUARDIAN_SECURITY_CHANNEL
     if SECURITY_CHANNEL:
@@ -727,22 +739,41 @@ def handle_reaction_feedback(body, client, logger):
 
 
 def _update_artifact_feedback(report: dict, feedback: str):
-    """Finds the matching incident JSON on disk and updates it with feedback."""
-    user_id = report.get("user", "")
+    """Finds the matching incident in the DB and updates it with feedback."""
     ts_str = report.get("timestamp", "")
+    user_id = report.get("user", "")
+    
+    try:
+        ts = dateutil.parser.isoparse(ts_str)
+    except Exception:
+        log.error("Failed to parse timestamp to update feedback.")
+        return
 
-    for path in ARTIFACTS_DIR.glob(f"*_incident_{user_id}.json"):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            if data.get("timestamp") == ts_str:
-                data["user_feedback"] = feedback
-                data["feedback_by"] = report.get("feedback_by")
-                data["feedback_at"] = report.get("feedback_at")
-                path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-                log.info("📝 Updated artifact with feedback: %s → %s", path.name, feedback)
-                return
-        except Exception:
-            continue
+    db = SessionLocal()
+    try:
+        # We find the incident by exact timestamp and user ID
+        incident = db.query(Incident).filter(
+            Incident.timestamp == ts,
+            Incident.user_id == user_id
+        ).first()
+        
+        if incident:
+            incident.user_feedback = feedback
+            incident.feedback_by = report.get("feedback_by")
+            
+            fb_at_str = report.get("feedback_at")
+            if fb_at_str:
+                incident.feedback_at = dateutil.parser.isoparse(fb_at_str)
+                
+            db.commit()
+            log.info("📝 Updated incident %s with feedback: %s", incident.id, feedback)
+        else:
+            log.warning("⚠️ Could not find incident in DB to update feedback.")
+    except Exception as e:
+        db.rollback()
+        log.error("❌ Failed to update DB feedback: %s", e)
+    finally:
+        db.close()
 
 
 # ---------------------------------------------------------------------------

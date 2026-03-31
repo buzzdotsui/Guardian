@@ -35,12 +35,19 @@ Guardian AI is a real-time security enforcement engine that monitors Slack messa
 
 ### Installation
 
+**Option A: Run with Docker (Recommended for Production)**
+Guardian AI is fully containerised. The easiest way to run the engine and dashboard is via Docker Compose:
+
 ```bash
-# Clone the repo
 git clone https://github.com/your-org/guardian-ai.git
 cd guardian-ai
+docker-compose up -d --build
+```
 
-# Install dependencies
+**Option B: Local Deployment (Development)**
+```bash
+git clone https://github.com/your-org/guardian-ai.git
+cd guardian-ai
 pip install -r requirements.txt
 ```
 
@@ -76,9 +83,13 @@ DASHBOARD_USER=admin
 DASHBOARD_PASS=guardian
 ```
 
-### Run the Engine
+### Run the Engine (Local Dev)
 
 ```bash
+# First time DB Setup/Migration
+python migrate_json_to_db.py
+
+# Start the Engine
 python main.py
 ```
 
@@ -86,7 +97,7 @@ This starts:
 - The Slack Socket Mode listener (real-time message monitoring)
 - The APScheduler weekly digest (Monday 08:00 UTC)
 
-### Run the Dashboard
+### Run the Dashboard (Local Dev)
 
 ```bash
 python dashboard/run.py
@@ -104,6 +115,8 @@ guardian-ai/
 ├── app/
 │   ├── engine.py                    # Core enforcement engine (all Slack handlers)
 │   ├── scheduler.py                 # APScheduler weekly digest
+│   ├── database.py                  # SQLAlchemy Engine & Session setup
+│   ├── models.py                    # SQLAlchemy Incident schema
 │   ├── integrations/
 │   │   ├── github_client.py         # GitHub gist & commit scanner
 │   │   └── slack_client.py          # Slack helper utilities
@@ -118,9 +131,12 @@ guardian-ai/
 │   └── templates/
 │       ├── index.html               # Dark-mode dashboard with Chart.js
 │       └── login.html               # Authentication page
-├── artifacts/                       # Incident JSON reports (auto-created)
+├── data/                            # Persistent SQLite database storage
 ├── requirements.txt
 ├── .env
+├── Dockerfile                       # Multi-stage Docker container
+├── docker-compose.yml               # Production Compose file
+├── migrate_json_to_db.py            # Used to migrate old JSON artifacts to SQLite
 └── README.md
 ```
 

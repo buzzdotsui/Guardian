@@ -26,8 +26,8 @@ from dotenv import load_dotenv
 load_dotenv()
 log = logging.getLogger("guardian.dashboard")
 
-ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
-
+from app.database import SessionLocal
+from app.models import Incident
 app = Flask(__name__, template_folder="templates")
 app.secret_key = os.getenv("DASHBOARD_SECRET_KEY", "guardian-ai-secret-key-change-me")
 
@@ -74,18 +74,16 @@ def logout():
 
 # ── Helpers ──────────────────────────────────────────────
 def _load_all_incidents() -> list[dict]:
-    """Load all incident JSON files from /artifacts."""
-    incidents = []
-    if not ARTIFACTS_DIR.exists():
-        return incidents
-    for path in sorted(ARTIFACTS_DIR.glob("*_incident_*.json"), reverse=True):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            data["_filename"] = path.name
-            incidents.append(data)
-        except Exception:
-            continue
-    return incidents
+    """Load all incident records from the database."""
+    db = SessionLocal()
+    try:
+        incidents = db.query(Incident).order_by(Incident.timestamp.desc()).all()
+        return [inc.to_dict() for inc in incidents]
+    except Exception as e:
+        log.error("Failed to fetch incidents from DB: %s", e)
+        return []
+    finally:
+        db.close()
 
 
 # ── Dashboard ────────────────────────────────────────────

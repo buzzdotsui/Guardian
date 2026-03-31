@@ -5,3 +5,5 @@ PyGithub
 groq
 flask
 apscheduler
+SQLAlchemy
+gunicorn
