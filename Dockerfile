@@ -24,8 +24,5 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy source code
 COPY . .
 
-# Expose Dashboard port
-EXPOSE 5000
-
 # Default command uses Honcho to run both web and worker from Procfile
 CMD ["honcho", "start"]
