@@ -1,0 +1,7 @@
+approved_ai_tools:
+  - name: "ChatGPT Enterprise"
+    domain: "chatgpt.com"
+  - name: "GitHub Copilot"
+    domain: "github.com"
+  - name: "Internal Guardian Bot"
+    domain: "guardian-ai.local"
