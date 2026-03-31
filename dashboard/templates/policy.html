@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Guardian AI — Security & AI Policy</title>
+  <!-- Same aesthetics as the index and login -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f111a;
+      --surface: #1a1d2d;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --primary: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --border: #2d3142;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 40px;
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 30px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 15px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 30px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    ul, ol {
+      margin-top: 10px;
+      padding-left: 20px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .alert {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 4px solid var(--danger);
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .alert strong {
+      color: var(--danger);
+    }
+
+    .rule-box {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 50px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1><span class="logo-icon">🛡️</span> Internal Security & AI Policy</h1>
+      <p>Mandatory rules for handling company data and using Generative AI tools.</p>
+    </header>
+
+    <div class="alert">
+      <strong>⚠️ Why are you here?</strong><br>
+      If Guardian AI sent you to this page, it detected a potential leak in your recent Slack message (e.g., an AWS Key, a database credential, or proprietary "Shadow AI" usage). Please review these rules carefully to ensure compliance.
+    </div>
+
+    <h2>1. The Golden Rule of Generative AI</h2>
+    <p>Do not paste <strong>any</strong> sensitive company information into public, 3rd-party Large Language Models (LLMs) like ChatGPT, Claude, Gemini, or GitHub Copilot (Personal).</p>
+    
+    <div class="rule-box">
+      <strong>❌ NEVER upload or paste:</strong>
+      <ul>
+        <li>Proprietary source code, unreleased features, or architectural diagrams.</li>
+        <li>Customer names, emails, financial records, or PII (Personally Identifiable Information).</li>
+        <li>Internal API keys, secrets, connection strings, or `.env` files.</li>
+        <li>Financial projections, meeting notes, or strategic plans.</li>
+      </ul>
+    </div>
+
+    <h2>2. Handling Credentials & Secrets in Slack</h2>
+    <p>Slack is a communication tool, not a secret vault. Even in private DMs or private channels, storing hardcoded secrets is strictly forbidden.</p>
+    <ul>
+      <li>Never share AWS Access Keys, Stripe Keys, SSH Keys, or Database Passwords in plaintext.</li>
+      <li>If you must share a credential, use our approved internal password manager or secret-sharing tool (e.g., 1Password, HashiCorp Vault), generating a temporary link to the secret.</li>
+      <li>If you accidentally leaked a secret in Slack, <strong>deleting the Slack message is not enough</strong>. You must immediately rotate the compromised credential in your cloud provider.</li>
+    </ul>
+
+    <h2>3. Approved AI Tools</h2>
+    <p>We absolutely encourage the safe use of AI to boost your productivity. However, you must only use our approved, enterprise-licensed tools where we have zero-data-retention agreements.</p>
+    <ul>
+      <li>Use the company’s internal instance for coding assistance.</li>
+      <li>Do not install unauthorized AI extensions in your IDE or browser.</li>
+    </ul>
+
+    <h2>4. What happens if Guardian AI flags me?</h2>
+    <p>Guardian AI is an automated agent protecting our data. If flagged:</p>
+    <ol>
+      <li>If it’s a false positive, click the <strong>✅ Dismiss</strong> reaction on the original Slack thread.</li>
+      <li>If it’s a true leak, click the <strong>⚠️ Escalate</strong> reaction and follow the remediation steps in your DM, immediately rotating any keys or recalling the data.</li>
+      <li>If you notice a security flaw yourself, use the <strong>/report</strong> slash command in Slack.</li>
+    </ol>
+
+    <div class="footer">
+      Managed by the Security & Operations Team.<br>
+      Report emergencies to the #security-escalations channel.
+    </div>
+  </div>
+
+</body>
+</html>

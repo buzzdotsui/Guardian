@@ -50,7 +50,7 @@ ARTIFACTS_DIR = Path("artifacts")
 ARTIFACTS_DIR.mkdir(exist_ok=True)
 
 # Policy URL — replace with your real Confluence / Notion page
-INTERNAL_AI_POLICY_URL = "https://your-company.example.com/internal-ai-policy"
+INTERNAL_AI_POLICY_URL = os.getenv("INTERNAL_AI_POLICY_URL", "http://localhost:5000/policy")
 
 # ---------------------------------------------------------------------------
 # Channel Allowlist  (Component 2)

@@ -71,6 +71,11 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+@app.route("/policy")
+def policy():
+    """Publicly accessible internal AI Policy page."""
+    return render_template("policy.html")
+
 
 # ── Helpers ──────────────────────────────────────────────
 def _load_all_incidents() -> list[dict]:
