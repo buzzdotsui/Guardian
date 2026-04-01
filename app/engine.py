@@ -116,18 +116,19 @@ _HIGH_SEVERITY_PATTERNS = [
     r"credential", r"password", r"secret", r"api[_\- ]?key",
     r"token", r"exfiltrat", r"upload", r"paste", r"leak",
     r"pii", r"ssn", r"credit.?card", r"customer.?data",
+    r"database", r"client", r"proprietary", r"confidential", r"source.?code",
 ]
 
-def compute_severity_score(ai_reasoning: str, github_confirmed: bool) -> int:
+def compute_severity_score(message_text: str, ai_reasoning: str, github_confirmed: bool) -> int:
     """
     Computes a 1–10 severity score from two signals:
-      • Groq confidence keywords → base score (1–7)
+      • High-severity keyword hits in the original message + AI reasoning (1–7)
       • GitHub confirmation bonus → +3 (capped at 10)
     """
-    text = ai_reasoning.lower()
+    combined_text = f"{message_text} {ai_reasoning}".lower()
 
     # Count how many high-severity patterns match
-    hits = sum(1 for pat in _HIGH_SEVERITY_PATTERNS if re.search(pat, text))
+    hits = sum(1 for pat in _HIGH_SEVERITY_PATTERNS if re.search(pat, combined_text))
 
     # Map hits to a base score (1–7)
     if hits >= 4:
@@ -469,7 +470,7 @@ def handle_message_events(body, logger):
         if github_result["confirmed"]:
             severity = min(severity + 3, 10)
     else:
-        severity = compute_severity_score(ai_decision, github_result["confirmed"])
+        severity = compute_severity_score(text, ai_decision, github_result["confirmed"])
     
     log.info("📊 Severity score: %s %d/10", _severity_emoji(severity), severity)
 
