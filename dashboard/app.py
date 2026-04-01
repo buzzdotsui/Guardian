@@ -22,6 +22,11 @@ from collections import Counter
 
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for
 from dotenv import load_dotenv
+import mimetypes
+
+# Fix for Windows registry issues serving raw text instead of CSS/JS MIME types
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('application/javascript', '.js')
 
 load_dotenv()
 log = logging.getLogger("guardian.dashboard")
