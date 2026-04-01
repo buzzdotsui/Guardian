@@ -1,0 +1,1 @@
+@tailwind base;@tailwind components;@tailwind utilities;@layer base{@apply bg-bg0 text-gray-100 min-h-screen overflow-x-hidden font-sans;}@apply bg-card backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,.4)];@apply bg-gradient-to-br from-white to-secondary text-transparent bg-clip-text;
