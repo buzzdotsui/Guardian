@@ -1,48 +1,49 @@
-import { useRef } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Icosahedron } from '@react-three/drei'
+import { Points, PointMaterial } from '@react-three/drei'
+import * as THREE from 'three'
 
-function WireframeGlobe() {
+function NeuralNetwork() {
   const ref = useRef<any>(null)
+  const [count] = useState(2500)
+  
+  const positions = useMemo(() => {
+    const pos = new Float32Array(count * 3)
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 10
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 10
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 10
+    }
+    return pos
+  }, [count])
 
-  // Slowly rotate the wireframe geometry
-  useFrame((_state, delta) => {
+  useFrame((state) => {
     if (ref.current) {
-      ref.current.rotation.y += delta * 0.1
-      ref.current.rotation.x += delta * 0.05
+      ref.current.rotation.y = state.clock.getElapsedTime() * 0.05
+      ref.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.2) * 0.1
     }
   })
 
   return (
-    <group rotation={[0, 0, Math.PI / 16]}>
-      {/* 
-        A highly detailed icosahedron acting as a holographic globe/radar.
-        args: [radius, detail]
-      */}
-      <Icosahedron ref={ref} args={[1.8, 3]}>
-        <meshBasicMaterial 
-          color="#00ddff" 
-          wireframe={true} 
-          transparent 
-          opacity={0.15} 
-        />
-      </Icosahedron>
-      
-      {/* Inner solid core just to give it depth so the back lines get obscured */}
-      <Icosahedron args={[1.78, 3]}>
-        <meshBasicMaterial 
-          color="#000000" 
-        />
-      </Icosahedron>
-    </group>
+    <Points ref={ref} positions={positions} stride={3} frustumCulled={false}>
+      <PointMaterial
+        transparent
+        color="#6366f1"
+        size={0.015}
+        sizeAttenuation={true}
+        depthWrite={false}
+        opacity={0.3}
+      />
+    </Points>
   )
 }
 
 export default function Background3D() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-      <Canvas camera={{ position: [0, 0, 3] }}>
-        <WireframeGlobe />
+      <Canvas camera={{ position: [0, 0, 5], fov: 60 }}>
+        <NeuralNetwork />
+        <fog attach="fog" args={['#0b0f19', 5, 10]} />
       </Canvas>
     </div>
   )

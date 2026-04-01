@@ -4,38 +4,34 @@
 
 @layer base {
   body {
-    @apply bg-hudBg text-hudText min-h-screen overflow-x-hidden font-sans uppercase tracking-widest;
+    @apply bg-slate-950 text-slate-100 min-h-screen font-sans;
   }
 }
 
-.hud-panel {
-  @apply bg-hudCard border border-hudBorder shadow-[0_0_15px_rgba(0,221,255,0.1)_inset,0_0_15px_rgba(0,221,255,0.1)];
-  /* Sharp cut corners geometry via CSS polygon */
-  clip-path: polygon(
-    0 10px, 
-    10px 0, 
-    100% 0, 
-    100% calc(100% - 10px), 
-    calc(100% - 10px) 100%, 
-    0 100%
-  );
+.card-panel {
+  @apply bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-xl shadow-xl transition-all duration-300;
 }
 
-.hud-border-l {
-  border-left: 2px solid theme('colors.hudCyan');
+.card-panel:hover {
+  @apply border-slate-700 shadow-2xl;
 }
 
-.glow-text {
-  text-shadow: 0 0 10px theme('colors.hudCyan');
+.btn-primary {
+  @apply px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition-colors shadow-md shadow-indigo-500/20 active:scale-[0.98];
 }
 
-.glow-text-alert {
-  text-shadow: 0 0 10px theme('colors.hudRed');
-  @apply text-hudRed animate-pulse;
+.text-gradient {
+  @apply bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent;
 }
 
-.crt-overlay {
-  @apply pointer-events-none fixed inset-0 z-[9999];
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  background-size: 100% 4px, 3px 100%;
+.indigo-glow {
+  @apply shadow-[0_0_30px_rgba(99,102,241,0.1)];
+}
+
+/* Base grid for background */
+.bg-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(31, 41, 55, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 41, 55, 0.4) 1px, transparent 1px);
 }
