@@ -1,44 +1,48 @@
-import { useRef, useMemo } from 'react'
+import { useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Points, PointMaterial } from '@react-three/drei'
-// @ts-ignore
-import * as random from 'maath/random/dist/maath-random.esm'
+import { Icosahedron } from '@react-three/drei'
 
-function Swarm() {
+function WireframeGlobe() {
   const ref = useRef<any>(null)
-  
-  // Generate slightly larger sphere of 2500 points for a "cyber" look
-  const sphere = useMemo(() => random.inSphere(new Float32Array(2500 * 3), { radius: 1.5 }), [])
 
-  // Slowly rotate the entire swarm
+  // Slowly rotate the wireframe geometry
   useFrame((_state, delta) => {
     if (ref.current) {
-      ref.current.rotation.x -= delta / 15
-      ref.current.rotation.y -= delta / 20
+      ref.current.rotation.y += delta * 0.1
+      ref.current.rotation.x += delta * 0.05
     }
   })
 
   return (
-    <group rotation={[0, 0, Math.PI / 4]}>
-      <Points ref={ref} positions={sphere as Float32Array} stride={3} frustumCulled={false}>
-        <PointMaterial
-          transparent
-          color="#818cf8"
-          size={0.008}
-          sizeAttenuation={true}
-          depthWrite={false}
-          blending={2} // Additive blending for that glowing cyber aesthetic
+    <group rotation={[0, 0, Math.PI / 16]}>
+      {/* 
+        A highly detailed icosahedron acting as a holographic globe/radar.
+        args: [radius, detail]
+      */}
+      <Icosahedron ref={ref} args={[1.8, 3]}>
+        <meshBasicMaterial 
+          color="#00ddff" 
+          wireframe={true} 
+          transparent 
+          opacity={0.15} 
         />
-      </Points>
+      </Icosahedron>
+      
+      {/* Inner solid core just to give it depth so the back lines get obscured */}
+      <Icosahedron args={[1.78, 3]}>
+        <meshBasicMaterial 
+          color="#000000" 
+        />
+      </Icosahedron>
     </group>
   )
 }
 
 export default function Background3D() {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
-      <Canvas camera={{ position: [0, 0, 1] }}>
-        <Swarm />
+    <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      <Canvas camera={{ position: [0, 0, 3] }}>
+        <WireframeGlobe />
       </Canvas>
     </div>
   )

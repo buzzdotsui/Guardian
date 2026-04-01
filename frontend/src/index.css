@@ -4,14 +4,38 @@
 
 @layer base {
   body {
-    @apply bg-bg0 text-gray-100 min-h-screen overflow-x-hidden font-sans;
+    @apply bg-hudBg text-hudText min-h-screen overflow-x-hidden font-sans uppercase tracking-widest;
   }
 }
 
-.glass-panel {
-  @apply bg-card backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+.hud-panel {
+  @apply bg-hudCard border border-hudBorder shadow-[0_0_15px_rgba(0,221,255,0.1)_inset,0_0_15px_rgba(0,221,255,0.1)];
+  /* Sharp cut corners geometry via CSS polygon */
+  clip-path: polygon(
+    0 10px, 
+    10px 0, 
+    100% 0, 
+    100% calc(100% - 10px), 
+    calc(100% - 10px) 100%, 
+    0 100%
+  );
+}
+
+.hud-border-l {
+  border-left: 2px solid theme('colors.hudCyan');
 }
 
 .glow-text {
-  @apply bg-gradient-to-br from-white to-secondary text-transparent bg-clip-text;
+  text-shadow: 0 0 10px theme('colors.hudCyan');
+}
+
+.glow-text-alert {
+  text-shadow: 0 0 10px theme('colors.hudRed');
+  @apply text-hudRed animate-pulse;
+}
+
+.crt-overlay {
+  @apply pointer-events-none fixed inset-0 z-[9999];
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 4px, 3px 100%;
 }

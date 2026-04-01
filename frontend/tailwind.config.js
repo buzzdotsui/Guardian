@@ -7,12 +7,21 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg0: "#0a0a1a",
-        bg1: "#10102a",
-        card: "rgba(20,20,50,0.65)",
-        surface: "rgba(20, 20, 50, 0.4)",
-        primary: "#6366f1",
-        secondary: "#818cf8",
+        hudBg: "#000000",
+        hudCard: "rgba(0, 15, 20, 0.8)",
+        hudBorder: "rgba(0, 221, 255, 0.4)",
+        hudCyan: "#00ddff",
+        hudRed: "#ff2a2a",
+        hudAmber: "#ffb400",
+        hudGreen: "#00ff88",
+        hudText: "#c0f8ff",
+      },
+      fontFamily: {
+        sans: ['Rajdhani', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      backgroundImage: {
+        'scanlines': "repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0, 221, 255, 0.05) 3px, rgba(0, 221, 255, 0.05) 4px)",
       }
     },
   },
