@@ -28,7 +28,7 @@ log = logging.getLogger("guardian.dashboard")
 
 from app.database import SessionLocal
 from app.models import Incident
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder="ui", static_url_path="/")
 app.secret_key = os.getenv("DASHBOARD_SECRET_KEY", "guardian-ai-secret-key-change-me")
 
 # Auth credentials from env
@@ -95,7 +95,7 @@ def _load_all_incidents() -> list[dict]:
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html")
+    return app.send_static_file("index.html")
 
 
 @app.route("/api/incidents")
