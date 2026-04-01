@@ -7,7 +7,7 @@ local JSON file artifact approach.
 
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Boolean, Text, JSON, DateTime
-from app.database import Base
+from app.database import Base, engine
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -59,3 +59,6 @@ class Incident(Base):
             "feedback_at": self.feedback_at.isoformat() if self.feedback_at else None,
             "policy_url": self.policy_url,
         }
+
+# Automatically create tables if they do not exist
+Base.metadata.create_all(bind=engine)
